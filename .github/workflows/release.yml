@@ -28,7 +28,7 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       
-      - name: Run chart-releaser
+      - name: Run oci chart-releaser
         uses: bitdeps/helm-oci-charts-releaser@v0.1.5
         with:
             oci_registry: ghcr.io/username
