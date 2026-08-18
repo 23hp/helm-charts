@@ -3,6 +3,17 @@ entries:
   wallabag:
   - apiVersion: v2
     appVersion: 2.6.14
+    created: "2026-08-18T10:16:47.665019827Z"
+    description: Single-Instance SQLite wallabag.
+    digest: ce3b32cf1e6862629b26f60a0931dc2c1a3d2f91c853ea08fa0cdf63221bc697
+    icon: https://raw.githubusercontent.com/wallabag/logo/master/app-android/logo-app-android-icon-bg-black-512.png
+    name: wallabag
+    type: application
+    urls:
+    - https://github.com/23hp/helm-charts/releases/download/wallabag-0.1.6/wallabag-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v2
+    appVersion: 2.6.14
     created: "2026-08-18T09:52:12.600896373Z"
     description: Single-Instance SQLite wallabag.
     digest: 845732e377132817cc81939cbb040288c86b1907b263758cc41e7c738c31d218
@@ -61,4 +72,4 @@ entries:
     urls:
     - https://github.com/23hp/helm-charts/releases/download/wallabag-0.1.0/wallabag-0.1.0.tgz
     version: 0.1.0
-generated: "2026-08-18T09:52:12.60092105Z"
+generated: "2026-08-18T10:16:47.665049511Z"
