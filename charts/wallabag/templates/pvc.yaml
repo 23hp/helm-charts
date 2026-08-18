@@ -1,0 +1,33 @@
+{{- if .Values.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "wallabag.fullname" . }}-data
+  labels:
+    {{- include "wallabag.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}
+  {{- if .Values.persistence.data.storageClass }}
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "wallabag.fullname" . }}-images
+  labels:
+    {{- include "wallabag.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.images.size }}
+  {{- if .Values.persistence.images.storageClass }}
+  storageClassName: {{ .Values.persistence.images.storageClass }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,11 @@
+wallabag:
+  domainName: https://wallabag.example.com
+
+httpRoute:
+  enabled: true
+  hostnames:
+    - wallabag.example.com
+  parentRefs:
+  - name: eg-gateway
+    namespace: envoy-gateway-system
+    sectionName: https
