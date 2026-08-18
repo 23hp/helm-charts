@@ -1,4 +1,6 @@
-# Helm Charts
+# Helm Charts 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/hp)](https://artifacthub.io/packages/search?repo=hp)
+
 Helm Charts for K8s at home
 
 ## Usage
