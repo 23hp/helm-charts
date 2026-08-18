@@ -1,6 +1,6 @@
 apiVersion: v2
 name: wallabag
-description: Single-Instance SQLite wallabag
+description: Single-Instance SQLite wallabag.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
