@@ -1,0 +1,19 @@
+{{- $root := . -}}
+{{- range $name, $config := .Values.persistence }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "paperless.labels" $root | nindent 4 }}
+spec:
+  accessModes:
+    - {{ $config.accessMode | default "ReadWriteOnce" }}
+  {{- if $config.storageClass }}
+  storageClassName: {{ $config.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $config.size | default "10Gi" }}
+{{- end }}

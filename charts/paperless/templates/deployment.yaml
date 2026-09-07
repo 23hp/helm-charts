@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "paperless.fullname" . }}
+  labels:
+    {{- include "paperless.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "paperless.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "paperless.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "paperless.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.volumeMounts }}
+      initContainers:
+        - name: fix-permissions
+          image: docker.io/busybox:latest
+          command: ["sh", "-c", "chown -R 1000:1000 /usr/src/paperless/data /usr/src/paperless/media /usr/src/paperless/consume /usr/src/paperless/export"]
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+      {{- end }}
+      containers:
+      {{- if .Values.sidecars.valkey.enabled }}
+        - name: valkey
+          image: "{{ .Values.sidecars.valkey.image.repository }}:{{ .Values.sidecars.valkey.image.tag }}"
+          resources:
+            {{- toYaml .Values.sidecars.valkey.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+        {{- if .Values.sidecars.tika.enabled }}
+        - name: tika
+          image: "{{ .Values.sidecars.tika.image.repository }}:{{ .Values.sidecars.tika.image.tag }}"
+          resources:
+            {{- toYaml .Values.sidecars.tika.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+        {{- if .Values.sidecars.gotenberg.enabled }}
+        - name: gotenberg
+          image: "{{ .Values.sidecars.gotenberg.image.repository }}:{{ .Values.sidecars.gotenberg.image.tag }}"
+          {{- if .Values.sidecars.gotenberg.args }}
+          args:
+            {{- toYaml .Values.sidecars.gotenberg.args | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.sidecars.gotenberg.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          env:
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.paperless.secretKeyRef.name }}{{ .Values.paperless.secretKeyRef.name }}{{ else }}{{ include "paperless.fullname" . }}-secret{{ end }}
+                  key: {{ .Values.paperless.secretKeyRef.key }}
+            {{- range $key, $val := .Values.paperless.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

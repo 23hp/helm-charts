@@ -1,0 +1,250 @@
+# Default values for paperless.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: ghcr.io/paperless-ngx/paperless-ngx
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+paperless:
+  secretKeyRef: # env PAPERLESS_SECRET_KEY
+    create: true
+    name: ""
+    key: "secret-key"
+  env:
+    PAPERLESS_URL: http://paperless.internal
+    PAPERLESS_TIKA_ENABLED: "1"
+    PAPERLESS_TIKA_GOTENBERG_ENDPOINT: "http://127.0.0.1:3000"
+    PAPERLESS_TIKA_ENDPOINT: "http://127.0.0.1:9998"
+    PAPERLESS_TIME_ZONE: "Europe/Berlin"
+    PAPERLESS_OCR_LANGUAGE: "deu+eng"
+    PAPERLESS_REDIS: "redis://127.0.0.1:6379"
+    PAPERLESS_PORT: 80
+
+persistence:
+  consume-pvc:
+    enabled: true
+    size: 1Gi
+  data-pvc:
+    enabled: true
+    size: 2Gi
+  export-pvc:
+    enabled: true
+    size: 5Gi
+  media-pvc:
+    enabled: true
+    size: 5Gi
+
+sidecars:
+  valkey:
+    enabled: true
+    image:
+      repository: docker.io/valkey/valkey
+      tag: 9-alpine
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
+  tika:
+    enabled: true
+    image:
+      repository: docker.io/apache/tika
+      tag: 3.3.1.0
+    resources:
+      requests:
+        cpu: 100m
+        memory: 384Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  gotenberg:
+    enabled: true
+    image:
+      repository: docker.io/gotenberg/gotenberg
+      tag: "8.34"
+    args:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created.
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account.
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+service:
+  # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+  type: ClusterIP
+  # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+  port: 80
+
+startupProbe:
+  httpGet:
+    path: /accounts/login/
+    port: 80
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  failureThreshold: 30
+
+livenessProbe:
+  httpGet:
+    path: /accounts/login/
+    port: 80
+  periodSeconds: 600
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: paperless.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+    # - secretName: chart-example-tls
+    #   hosts:
+    #     - chart-example.local
+
+# -- Expose the service via gateway-api HTTPRoute
+# Requires Gateway API resources and suitable controller installed within the cluster
+# (see: https://gateway-api.sigs.k8s.io/guides/)
+httpRoute:
+  # HTTPRoute enabled.
+  enabled: false
+  # HTTPRoute annotations.
+  annotations: {}
+  # Which Gateways this Route is attached to.
+  parentRefs:
+  - name: gateway
+    sectionName: http
+    # namespace: default
+  # Hostnames matching HTTP header.
+  hostnames:
+  - paperless.local
+  # List of rules and filters applied.
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+  #   filters:
+  #   - type: RequestHeaderModifier
+  #     requestHeaderModifier:
+  #       set:
+  #       - name: My-Overwrite-Header
+  #         value: this-is-the-only-value
+  #       remove:
+  #       - User-Agent
+  # - matches:
+  #   - path:
+  #       type: PathPrefix
+  #       value: /echo
+  #     headers:
+  #     - name: version
+  #       value: v2
+
+resources: 
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes:
+  - name: consume-volume
+    persistentVolumeClaim:
+      claimName: consume-pvc
+  - name: data-volume
+    persistentVolumeClaim:
+      claimName: data-pvc
+  - name: export-volume
+    persistentVolumeClaim:
+      claimName: export-pvc
+  - name: media-volume
+    persistentVolumeClaim:
+      claimName: media-pvc
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+  - name: consume-volume
+    mountPath: /usr/src/paperless/consume
+  - name: data-volume
+    mountPath: /usr/src/paperless/data
+  - name: export-volume
+    mountPath: /usr/src/paperless/export
+  - name: media-volume
+    mountPath: /usr/src/paperless/media
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
