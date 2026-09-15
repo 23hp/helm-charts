@@ -57,10 +57,10 @@ sidecars:
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 50Mi
       limits:
         cpu: 200m
-        memory: 512Mi
+        memory: 128Mi
   tika:
     enabled: true
     image:
@@ -207,7 +207,7 @@ resources:
     memory: 256Mi
   limits:
     cpu: 1000m
-    memory: 1Gi
+    memory: 2Gi
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:
